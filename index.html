@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>إمبراطورية سلاسل الإمداد</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#0b1220;color:white;
+ font-family:Tahoma,Arial,sans-serif;
+ direction:rtl;text-align:right;
+}
+header{
+ padding:25px;text-align:center;
+ background:linear-gradient(120deg,#102c44,#087e83);
+}
+header h1{margin:0;color:#62f5d0;font-size:27px}
+header p{color:#c6e9e8}
+.container{max-width:850px;margin:auto;padding:18px}
+.stats{
+ display:grid;grid-template-columns:repeat(3,1fr);
+ gap:10px;margin:15px 0;
+}
+.stat,.panel{
+ background:#172438;border:1px solid #263d56;
+ border-radius:14px;padding:16px;
+}
+.stat small{color:#9fb2c8}
+.stat strong{display:block;font-size:21px;margin-top:8px;color:#62f5d0;direction:rtl}
+h2{color:#62f5d0;font-size:19px}
+button,select{
+ width:100%;padding:13px;margin:7px 0;
+ border:0;border-radius:9px;font-size:15px;
+ font-family:inherit;
+}
+button{
+ background:#13b99c;color:#061c20;
+ font-weight:bold;cursor:pointer;
+}
+button:hover{background:#62f5d0}
+.option{
+ background:#263d56;color:white;text-align:right;
+}
+.option.selected{outline:2px solid #62f5d0}
+#log{
+ background:#0c1929;padding:12px;border-radius:10px;
+ line-height:1.9;color:#cbd9e9;min-height:60px;
+}
+.progress{height:9px;background:#34465b;border-radius:10px;overflow:hidden}
+#bar{height:9px;background:#62f5d0;width:0%;border-radius:10px}
+.hidden{display:none}
+footer{text-align:center;color:#8298ad;padding:25px}
+#feedback{line-height:1.9}
+.number{direction:ltr;unicode-bidi:embed;display:inline-block}
+@media(max-width:520px){
+ .stats{grid-template-columns:1fr}
+ .stat{padding:12px}
+ header h1{font-size:22px}
+}
+</style>
+</head>
+<body>
+
+<header>
+<h1>🚚 إمبراطورية سلاسل الإمداد</h1>
+<p>كن المدير التنفيذي وابنِ إمبراطورية ناجحة في عالم سلاسل الإمداد.</p>
+</header>
+
+<div class="container">
+
+<div class="stats">
+ <div class="stat"><small>💰 رأس المال</small><strong id="money">١٠٠٬٠٠٠ جنيه</strong></div>
+ <div class="stat"><small>⭐ السمعة</small><strong id="rep">٥٠</strong></div>
+ <div class="stat"><small>📅 اليوم</small><strong id="day">١ / ٣٠</strong></div>
+</div>
+
+<div class="panel" id="intro">
+<h2>أهلًا بك أيها المدير التنفيذي!</h2>
+<p>أمامك ٣٠ يومًا لبناء شركة ناجحة في مجال سلاسل الإمداد.</p>
+<p>مهمتك هي اختيار الموردين، وإدارة المخزون، وتخزين المنتجات، ونقل البضائع، وتلبية احتياجات العملاء.</p>
+<button onclick="startGame()">ابدأ بناء شركتك 🚀</button>
+</div>
+
+<div class="panel hidden" id="game">
+<h2 id="stage">المرحلة الأولى: التوريد</h2>
+<div class="progress"><div id="bar"></div></div>
+<p id="question">اختر المورد المناسب.</p>
+<div id="options"></div>
+<p id="feedback"></p>
+<button onclick="nextStage()" id="next" class="hidden">متابعة ➜</button>
+</div>
+
+<div class="panel hidden" id="result">
+<h2>🏆 تقرير أداء الشركة</h2>
+<h3 id="finalTitle"></h3>
+<p id="finalText"></p>
+<button onclick="location.reload()">العب مرة أخرى 🔄</button>
+</div>
+
+<div class="panel" style="margin-top:15px">
+<h2>📋 سجل نشاط المدير التنفيذي</h2>
+<div id="log">شركتك في انتظار بدء التشغيل...</div>
+</div>
+
+</div>
+
+<footer>إمبراطورية سلاسل الإمداد © ٢٠٢٦</footer>
+
+<script>
+let money=100000,rep=50,day=1;
+let stage=0,choice=null;
+let inventory=0,orders=0;
+
+const stages=[
+{
+ name:"التوريد",
+ question:"يعرض عليك أحد الموردين ١٠٠ منتج. أي مورد ستختار؟",
+ options:[
+ ["المورد أ: سعر منخفض وجودة منخفضة",0],
+ ["المورد ب: سعر وجودة متوازنان",1],
+ ["المورد ج: سعر مرتفع وجودة ممتازة",2]
+ ],
+ answer:1,
+ explain:"المورد ب يقدم توازنًا جيدًا بين التكلفة والجودة.",
+ reward:[-15000,10000,-22000],
+ reputation:[-8,12,8]
+},
+{
+ name:"إدارة المخزون",
+ question:"الطلب على منتجاتك في تزايد. ما الاستراتيجية التي ستتبعها لإدارة المخزون؟",
+ options:[
+ ["الاحتفاظ بمخزون أكبر من الحاجة",0],
+ ["الاحتفاظ بمخزون أمان مناسب",1],
+ ["الاحتفاظ بمخزون يكاد يكون منعدمًا",2]
+ ],
+ answer:1,
+ explain:"مخزون الأمان يحمي شركتك من الزيادة المفاجئة في الطلب أو تأخر التوريد.",
+ reward:[-12000,12000,-5000],
+ reputation:[-5,12,-10]
+},
+{
+ name:"إدارة المستودعات",
+ question:"مستودعك أصبح ممتلئًا تقريبًا. ماذا ستفعل؟",
+ options:[
+ ["استئجار مستودع إضافي",0],
+ ["إعادة تنظيم واستغلال مساحة المستودع",1],
+ ["تجاهل المشكلة",2]
+ ],
+ answer:1,
+ explain:"تحسين استغلال مساحة المستودع يقلل تكاليف التخزين ويرفع كفاءة العمل.",
+ reward:[-15000,10000,-10000],
+ reputation:[2,12,-10]
+},
+{
+ name:"النقل",
+ question:"تحتاج إلى توصيل المنتجات بسرعة. أي وسيلة نقل ستختار؟",
+ options:[
+ ["النقل البحري: رخيص لكنه بطيء",0],
+ ["النقل البري: يحقق توازنًا بين السرعة والتكلفة",1],
+ ["النقل الجوي: سريع لكنه مرتفع التكلفة",2]
+ ],
+ answer:1,
+ explain:"النقل البري قد يوفر توازنًا عمليًا بين سرعة التوصيل وتكلفته.",
+ reward:[5000,12000,-18000],
+ reputation:[-5,10,5]
+},
+{
+ name:"التوزيع",
+ question:"كيف ستوصل منتجاتك إلى العملاء؟",
+ options:[
+ ["التوصيل دون تخطيط",0],
+ ["تخطيط مسارات توصيل فعّالة",1],
+ ["استخدام شاحنة واحدة لكل الطلبات دون تنظيم",2]
+ ],
+ answer:1,
+ explain:"تخطيط مسارات التوصيل يوفر الوقود والوقت ويقلل تكاليف التوزيع.",
+ reward:[-10000,15000,-5000],
+ reputation:[-12,12,-5]
+},
+{
+ name:"إدارة الأزمات",
+ question:"تأخرت إحدى الشحنات عن موعدها. ما القرار الذي ستتخذه؟",
+ options:[
+ ["عدم اتخاذ أي إجراء",0],
+ ["البحث عن مورد بديل أو مسار نقل آخر",1],
+ ["إلغاء جميع الطلبات",2]
+ ],
+ answer:1,
+ explain:"مرونة سلسلة الإمداد تساعد الشركة على التعامل مع التعطلات والحفاظ على رضا العملاء.",
+ reward:[-12000,10000,-20000],
+ reputation:[-15,12,-20]
+}
+];
+
+function formatNumber(value){
+ return new Intl.NumberFormat("ar-EG").format(value);
+}
+
+function startGame(){
+ document.getElementById("intro").classList.add("hidden");
+ document.getElementById("game").classList.remove("hidden");
+ log("🚀 تم إطلاق شركتك رسميًا! بالتوفيق في إدارة عملياتك.");
+ render();
+}
+
+function render(){
+ let s=stages[stage];
+ choice=null;
+ document.getElementById("stage").innerText=
+ "المرحلة "+formatNumber(stage+1)+": "+s.name;
+ document.getElementById("question").innerText=s.question;
+ document.getElementById("bar").style.width=
+ (stage/stages.length*100)+"%";
+ document.getElementById("feedback").innerText="";
+ document.getElementById("next").classList.add("hidden");
+ let html="";
+ s.options.forEach((o,i)=>{
+ html+=`<button class="option" onclick="selectOption(${i})">${o[0]}</button>`;
+ });
+ document.getElementById("options").innerHTML=html;
+}
+
+function selectOption(i){
+ if(choice!==null)return;
+ choice=i;
+ let s=stages[stage];
+ money+=s.reward[i];
+ rep=Math.max(0,Math.min(100,rep+s.reputation[i]));
+ let good=i===s.answer;
+ if(good)orders+=10;
+ document.querySelectorAll(".option")[i].classList.add("selected");
+ let impact=formatNumber(Math.abs(s.reward[i]));
+ document.getElementById("feedback").innerHTML=
+ (good?"✅ قرار ممتاز!":"⚠️ قرار ينطوي على بعض المخاطر!")+
+ "<br>"+s.explain+
+ "<br><br>التأثير المالي: "+(s.reward[i]>=0?"ربح +":"خسارة -")+impact+" جنيه";
+ log((good?"✅ ":"⚠️ ")+s.name+": "+s.options[i][0]);
+ updateStats();
+ document.getElementById("next").classList.remove("hidden");
+}
+
+function nextStage(){
+ stage++;
+ if(stage<stages.length){
+ render();
+ }else{
+ finish();
+ }
+}
+
+function updateStats(){
+ document.getElementById("money").innerText=
+ formatNumber(money)+" جنيه";
+ document.getElementById("rep").innerText=formatNumber(rep)+" / ١٠٠";
+ document.getElementById("day").innerText=formatNumber(day)+" / ٣٠";
+}
+
+function log(message){
+ let l=document.getElementById("log");
+ l.innerHTML+= "<br>"+message;
+}
+
+function finish(){
+ document.getElementById("game").classList.add("hidden");
+ document.getElementById("result").classList.remove("hidden");
+ let title,text;
+ if(money>=110000&&rep>=75){
+ title="🏆 خبير سلاسل الإمداد!";
+ text="أداء استثنائي! أصبحت مستعدًا لقيادة شركة ناجحة في مجال سلاسل الإمداد.";
+ }else if(money>70000&&rep>=50){
+ title="🥈 مدير ناجح!";
+ text="عمل جيد! نجحت شركتك في تجاوز التحديات، ولديها فرصة كبيرة للنمو والتطور.";
+ }else{
+ title="📉 الشركة تحتاج إلى تطوير";
+ text="واجهت شركتك بعض التحديات. راجع قرارات التوريد وإدارة المخزون والخدمات اللوجستية لتحسين أدائك.";
+ }
+ document.getElementById("finalTitle").innerText=title;
+ document.getElementById("finalText").innerText=
+ text+" رأس المال النهائي: "+formatNumber(money)+
+ " جنيه | السمعة: "+formatNumber(rep)+"/١٠٠ | القرارات الصحيحة: "+
+ formatNumber(orders)+"/٦٠.";
+ document.getElementById("bar").style.width="100%";
+ updateStats();
+ log("🏁 انتهت جميع المراحل! تم إعداد تقرير أداء الشركة.");
+}
+</script>
+</body>
+</html>
